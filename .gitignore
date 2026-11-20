@@ -1,0 +1,11 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Cronologia degli assistenti AI (contiene dati personali)
+.antigravity/
