@@ -40,8 +40,72 @@ export const AddDishModal: React.FC<AddDishModalProps> = ({
   const [autoIngredients, setAutoIngredients] = useState(true);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [recipeSearch, setRecipeSearch] = useState('');
+  // Suggerimenti dal ricettario mentre si scrive in "Scrittura libera"
+  const [linkedRecipe, setLinkedRecipe] = useState<Recipe | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [highlighted, setHighlighted] = useState(-1);
 
   if (!isOpen) return null;
+
+  // Testo normalizzato: minuscolo, senza accenti e spazi doppi
+  const normalize = (t: string) =>
+    t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ').trim();
+
+  // Ricette che corrispondono a quanto scritto (max 5), le più pertinenti prima
+  const getSuggestions = (text: string): Recipe[] => {
+    const q = normalize(text);
+    if (q.length < 2) return [];
+    const tokens = q.split(' ');
+    const scored = household.recipes
+      .map((r) => {
+        const name = normalize(r.name);
+        const words = name.split(' ');
+        let score = -1;
+        if (name.startsWith(q)) score = 0;
+        else if (name.includes(q)) score = 1;
+        else if (tokens.every((t) => words.some((w) => w.startsWith(t)))) score = 2;
+        return { r, score };
+      })
+      .filter((x) => x.score >= 0 && normalize(x.r.name) !== q);
+    scored.sort((a, b) => a.score - b.score || a.r.name.localeCompare(b.r.name));
+    return scored.slice(0, 5).map((x) => x.r);
+  };
+
+  const suggestions = getSuggestions(dishName);
+  const suggestionsVisible = showSuggestions && suggestions.length > 0 && !linkedRecipe;
+
+  const handleDishNameChange = (value: string) => {
+    setDishName(value);
+    // Se il nome coincide esattamente con una ricetta, la collego automaticamente
+    const exact = household.recipes.find((r) => normalize(r.name) === normalize(value));
+    setLinkedRecipe(exact || null);
+    setShowSuggestions(true);
+    setHighlighted(-1);
+  };
+
+  const pickSuggestion = (recipe: Recipe) => {
+    setDishName(recipe.name);
+    setLinkedRecipe(recipe);
+    setShowSuggestions(false);
+    setHighlighted(-1);
+  };
+
+  const handleDishNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!suggestionsVisible) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlighted((h) => (h + 1) % suggestions.length);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlighted((h) => (h <= 0 ? suggestions.length - 1 : h - 1));
+    } else if (e.key === 'Enter' && highlighted >= 0) {
+      e.preventDefault();
+      pickSuggestion(suggestions[highlighted]);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setShowSuggestions(false);
+    }
+  };
 
   const currentSeason = getCurrentSeason();
 
@@ -63,7 +127,12 @@ export const AddDishModal: React.FC<AddDishModalProps> = ({
     e.preventDefault();
     if (tab === 'custom') {
       if (!dishName.trim()) return;
-      onAdd(dishName.trim(), selectedGroupId, undefined, false);
+      if (linkedRecipe) {
+        // Piatto scelto tra i suggerimenti: lo collego alla ricetta (e ai suoi ingredienti)
+        onAdd(linkedRecipe.name, selectedGroupId, linkedRecipe, autoIngredients);
+      } else {
+        onAdd(dishName.trim(), selectedGroupId, undefined, false);
+      }
     } else {
       if (!selectedRecipe) return;
       onAdd(selectedRecipe.name, selectedGroupId, selectedRecipe, autoIngredients);
@@ -153,17 +222,67 @@ export const AddDishModal: React.FC<AddDishModalProps> = ({
               <label className="text-xs font-semibold text-app-main block mb-1">
                 Nome del piatto
               </label>
-              <input
-                type="text"
-                autoFocus
-                placeholder="es. Pasta alla Nerano, Bistecca con insalata..."
-                value={dishName}
-                onChange={(e) => setDishName(e.target.value)}
-                className="w-full px-3 py-2 text-sm rounded-xl border border-app-subtle bg-app-card text-app-main focus:border-app-primary focus:ring-1 focus:ring-app-primary outline-hidden"
-              />
-              <p className="text-[11px] text-app-muted mt-1.5">
-                Puoi inserire qualsiasi piatto rapido. Per gestire ingredienti automatici, usa il ricettario.
-              </p>
+              <div className="relative">
+                <input
+                  type="text"
+                  autoFocus
+                  autoComplete="off"
+                  placeholder="es. Pasta alla Nerano, Bistecca con insalata..."
+                  value={dishName}
+                  onChange={(e) => handleDishNameChange(e.target.value)}
+                  onKeyDown={handleDishNameKeyDown}
+                  onFocus={() => setShowSuggestions(true)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                  className="w-full px-3 py-2 text-sm rounded-xl border border-app-subtle bg-app-card text-app-main focus:border-app-primary focus:ring-1 focus:ring-app-primary outline-hidden"
+                />
+
+                {/* Suggerimenti dal ricettario */}
+                {suggestionsVisible && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-10 rounded-xl border border-app-subtle bg-app-card shadow-lg overflow-hidden">
+                    <div className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-app-muted flex items-center gap-1">
+                      <BookOpen className="w-3 h-3" /> Dal ricettario
+                    </div>
+                    {suggestions.map((recipe, idx) => (
+                      <button
+                        key={recipe.id}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => pickSuggestion(recipe)}
+                        onMouseEnter={() => setHighlighted(idx)}
+                        className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between gap-2 cursor-pointer ${
+                          idx === highlighted ? 'bg-app-primary-light text-app-primary' : 'text-app-main hover:bg-app-muted'
+                        }`}
+                      >
+                        <span className="font-semibold truncate">{recipe.name}</span>
+                        <span className="text-[10px] text-app-muted shrink-0">{recipe.category}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {linkedRecipe ? (
+                <div className="mt-2 p-2.5 rounded-xl border border-app-primary-border bg-app-primary-light/50 space-y-1.5">
+                  <div className="text-[11px] text-app-primary font-semibold flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5" /> Collegato alla ricetta «{linkedRecipe.name}»
+                  </div>
+                  {linkedRecipe.ingredients.length > 0 && (
+                    <label className="flex items-center gap-2 text-xs text-app-main cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={autoIngredients}
+                        onChange={(e) => setAutoIngredients(e.target.checked)}
+                        className="w-4 h-4 rounded-sm text-app-primary accent-[var(--primary)]"
+                      />
+                      <span>Aggiungi gli ingredienti ({linkedRecipe.ingredients.length}) alla Lista della Spesa</span>
+                    </label>
+                  )}
+                </div>
+              ) : (
+                <p className="text-[11px] text-app-muted mt-1.5">
+                  Scrivi liberamente: se il nome somiglia a una ricetta del ricettario te la suggerisco.
+                </p>
+              )}
             </div>
           ) : (
             <div className="space-y-3">
