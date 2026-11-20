@@ -198,7 +198,7 @@ export const ShoppingListView: React.FC = () => {
 
               <div className="flex items-center gap-2">
                 <span className="text-[10px] text-app-muted hidden md:inline">
-                  ✨ Reparto assegnato automaticamente da AI
+                  Reparto assegnato automaticamente
                 </span>
               </div>
             </div>

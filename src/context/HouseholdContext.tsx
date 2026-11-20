@@ -17,7 +17,7 @@ import {
   MealGroup,
   AppUser,
 } from '../types.ts';
-import { createInitialHousehold, createEmptyHousehold, getCurrentWeekId, normalizeMealSlot } from '../data/initialData.ts';
+import { createInitialHousehold, createEmptyHousehold, getCurrentWeekId, normalizeMealSlot, dedupeDishes, categorizeProduct } from '../data/initialData.ts';
 import { auth, db, signInWithGoogle, logOut, onAuthStateChanged } from '../firebase.ts';
 import { HAS_API_SERVER } from '../apiServer.ts';
 import {
@@ -804,7 +804,8 @@ export const HouseholdProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       const updatedSlot: MealSlot = {
         ...currentSlot,
         type: slotType || currentSlot.type,
-        groups,
+        // Se si riuniscono i gruppi, lo stesso piatto viene scritto una sola volta
+        groups: groups.map((g) => ({ ...g, dishes: dedupeDishes(g.dishes) })),
       };
 
       return {
@@ -1097,23 +1098,7 @@ export const HouseholdProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     dayKey?: DayKey;
     targetHouse?: string;
   }) => {
-    let resolvedCategory = item.category;
-    if (!resolvedCategory && !HAS_API_SERVER) {
-      resolvedCategory = 'ortofrutta';
-    }
-    if (!resolvedCategory) {
-      try {
-        const catRes = await fetch('/api/ai/categorize-product', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ productName: item.name }),
-        });
-        const catData = await catRes.json();
-        resolvedCategory = catData.category || 'ortofrutta';
-      } catch {
-        resolvedCategory = 'ortofrutta';
-      }
-    }
+    const resolvedCategory = item.category || categorizeProduct(item.name);
 
     const newItem: ShoppingItem = {
       id: `sp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
@@ -1143,7 +1128,7 @@ export const HouseholdProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const formatted: ShoppingItem[] = items.map((it) => ({
       id: `sp_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       name: it.name.trim(),
-      category: it.category || 'ortofrutta',
+      category: it.category || categorizeProduct(it.name),
       assignee: it.assignee || 'together',
       dishName: it.dishName,
       dayKey: it.dayKey,

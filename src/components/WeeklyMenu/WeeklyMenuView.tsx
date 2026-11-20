@@ -6,7 +6,6 @@ import {
   Trash2,
   Users,
   User,
-  Sparkles,
   ShoppingBag,
   RotateCcw,
   CalendarDays,
@@ -31,9 +30,7 @@ import { AddDishModal, GroupOption } from './AddDishModal.tsx';
 import { CalendarPickerModal } from './CalendarPickerModal.tsx';
 import { MealGroupingModal } from './MealGroupingModal.tsx';
 
-interface WeeklyMenuViewProps {
-  onOpenAISuggest: () => void;
-}
+interface WeeklyMenuViewProps {}
 
 const ALL_DAY_KEYS: DayKey[] = ['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'];
 
@@ -67,7 +64,7 @@ const PRESET_INTERVALS: { id: string; label: string; days: DayKey[] }[] = [
 ];
 
 
-export const WeeklyMenuView: React.FC<WeeklyMenuViewProps> = ({ onOpenAISuggest }) => {
+export const WeeklyMenuView: React.FC<WeeklyMenuViewProps> = () => {
   const {
     household,
     members,
@@ -261,7 +258,7 @@ export const WeeklyMenuView: React.FC<WeeklyMenuViewProps> = ({ onOpenAISuggest 
           )}
         </div>
 
-        {/* Right Action buttons: Filter interval & AI */}
+        {/* Right Action buttons: Filter interval */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsFilterPanelOpen(!isFilterPanelOpen)}
@@ -278,14 +275,6 @@ export const WeeklyMenuView: React.FC<WeeklyMenuViewProps> = ({ onOpenAISuggest 
             </span>
           </button>
 
-          {/* Suggestion AI button */}
-          <button
-            onClick={onOpenAISuggest}
-            className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-xl bg-app-primary text-white hover:opacity-90 transition-opacity active:scale-95 shadow-xs cursor-pointer"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Consigliami piatti</span>
-          </button>
         </div>
       </div>
 

@@ -5,7 +5,6 @@ import {
   BookOpen,
   Settings,
   Users,
-  Sparkles,
   RefreshCw,
   Home,
   ChevronDown,
@@ -24,13 +23,11 @@ export type TabType = 'menu' | 'shopping' | 'recipes' | 'settings';
 interface NavigationProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
-  onOpenAISuggest: () => void;
 }
 
 export const Navigation: React.FC<NavigationProps> = ({
   activeTab,
   setActiveTab,
-  onOpenAISuggest,
 }) => {
   const {
     household,
@@ -221,48 +218,8 @@ export const Navigation: React.FC<NavigationProps> = ({
               <span className="hidden sm:inline">Invita / Link</span>
             </button>
 
-            {/* AI Inspiration button */}
-            <button
-              onClick={onOpenAISuggest}
-              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg bg-app-primary-light text-app-primary hover:opacity-90 transition-opacity active:scale-95 cursor-pointer shadow-xs"
-              title="Consigliami ricette di stagione con AI"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Ispirazione AI</span>
-            </button>
-
-            {/* Google User or Sign-in button */}
-            {user ? (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => setActiveTab('settings')}
-                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg border border-app-subtle bg-app-card hover:bg-app-muted transition-colors text-xs font-medium text-app-main cursor-pointer"
-                  title={`Connesso con Google: ${user.email}. Clicca per impostazioni.`}
-                >
-                  {user.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt={user.displayName || 'Google'}
-                      className="w-4 h-4 rounded-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-xs font-bold text-app-primary">
-                      {user.displayName?.charAt(0) || 'G'}
-                    </span>
-                  )}
-                  <span className="font-semibold hidden lg:inline truncate max-w-[100px]">
-                    {user.displayName?.split(' ')[0] || 'Account'}
-                  </span>
-                </button>
-                <button
-                  onClick={() => logout()}
-                  className="p-1.5 rounded-lg border border-app-subtle bg-app-card hover:bg-red-50 dark:hover:bg-red-950/30 text-app-muted hover:text-red-600 transition-colors"
-                  title="Disconnetti Google"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
+            {/* Sign-in button (solo se non connesso) */}
+            {!user && (
               <button
                 onClick={() => loginWithGoogle()}
                 className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-app-subtle bg-app-card hover:bg-app-muted transition-colors text-xs font-semibold text-app-main cursor-pointer shadow-xs active:scale-95"
@@ -313,6 +270,17 @@ export const Navigation: React.FC<NavigationProps> = ({
                 </span>
               )}
             </button>
+
+            {/* Disconnetti */}
+            {user && (
+              <button
+                onClick={() => logout()}
+                className="p-1.5 rounded-lg border border-app-subtle bg-app-card hover:bg-red-50 dark:hover:bg-red-950/30 text-app-muted hover:text-red-600 transition-colors"
+                title="Disconnetti Google"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
       </header>

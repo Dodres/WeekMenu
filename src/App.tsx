@@ -10,14 +10,12 @@ import { WeeklyMenuView } from './components/WeeklyMenu/WeeklyMenuView.tsx';
 import { ShoppingListView } from './components/ShoppingList/ShoppingListView.tsx';
 import { RecipesView } from './components/Recipes/RecipesView.tsx';
 import { SettingsView } from './components/Settings/SettingsView.tsx';
-import { AISuggestModal } from './components/Recipes/AISuggestModal.tsx';
 import { ShareHouseholdModal } from './components/ShareHouseholdModal.tsx';
 import { AuthLandingView } from './components/Auth/AuthLandingView.tsx';
-import { CheckCircle2, Sparkles, X } from 'lucide-react';
+import { CheckCircle2, X } from 'lucide-react';
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState<TabType>('menu');
-  const [isAISuggestOpen, setIsAISuggestOpen] = useState(false);
   const [joinedToast, setJoinedToast] = useState<string | null>(null);
   const {
     household,
@@ -80,7 +78,6 @@ function MainApp() {
       <Navigation
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        onOpenAISuggest={() => setIsAISuggestOpen(true)}
       />
 
       {/* Non-intrusive joined banner toast */}
@@ -100,20 +97,14 @@ function MainApp() {
       {/* Main Content Area */}
       <main className="flex-1 max-w-5xl w-full mx-auto px-3 sm:px-4 pt-4 sm:pt-6">
         {activeTab === 'menu' && (
-          <WeeklyMenuView onOpenAISuggest={() => setIsAISuggestOpen(true)} />
+          <WeeklyMenuView />
         )}
         {activeTab === 'shopping' && <ShoppingListView />}
         {activeTab === 'recipes' && (
-          <RecipesView onOpenAISuggest={() => setIsAISuggestOpen(true)} />
+          <RecipesView />
         )}
         {activeTab === 'settings' && <SettingsView />}
       </main>
-
-      {/* Global AI Suggestion Modal */}
-      <AISuggestModal
-        isOpen={isAISuggestOpen}
-        onClose={() => setIsAISuggestOpen(false)}
-      />
 
       {/* Global Share & Invite Modal */}
       <ShareHouseholdModal

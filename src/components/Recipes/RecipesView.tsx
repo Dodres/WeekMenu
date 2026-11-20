@@ -2,7 +2,6 @@ import React, { useState, useMemo } from 'react';
 import {
   BookOpen,
   Plus,
-  Sparkles,
   Search,
   Clock,
   Calendar,
@@ -27,10 +26,9 @@ import {
 } from '../../data/initialData.ts';
 
 interface RecipesViewProps {
-  onOpenAISuggest: () => void;
 }
 
-export const RecipesView: React.FC<RecipesViewProps> = ({ onOpenAISuggest }) => {
+export const RecipesView: React.FC<RecipesViewProps> = () => {
   const {
     household,
     members,
@@ -211,31 +209,6 @@ export const RecipesView: React.FC<RecipesViewProps> = ({ onOpenAISuggest }) => 
 
   return (
     <div className="space-y-6 pb-24">
-      {/* AI Inspiration Banner */}
-      <div className="bg-gradient-to-r from-app-primary-light via-app-card to-app-muted/40 rounded-2xl border border-app-primary-border p-4 sm:p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-xl bg-app-primary text-white flex items-center justify-center shrink-0 shadow-xs">
-            <Sparkles className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="font-bold text-sm sm:text-base text-app-main tracking-tight">
-              Ispirazione di Stagione con Gemini Flash
-            </h2>
-            <p className="text-xs text-app-muted mt-0.5">
-              Scopri nuove ricette autunnali con ingredienti tipici (zucca, funghi, castagne) ed eviti automaticamente piatti cucinati di recente!
-            </p>
-          </div>
-        </div>
-
-        <button
-          onClick={onOpenAISuggest}
-          className="px-4 py-2.5 rounded-xl bg-app-primary text-white font-bold text-xs flex items-center gap-2 hover:opacity-90 transition-opacity active:scale-95 shadow-xs shrink-0 cursor-pointer"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Consigliami piatti</span>
-        </button>
-      </div>
-
       {/* Filter and Search Bar */}
       <div className="bg-app-card rounded-2xl border border-app-subtle p-3 sm:p-4 shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">

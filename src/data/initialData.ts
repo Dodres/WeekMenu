@@ -1,4 +1,4 @@
-import { Household, Recipe, WeekMenu, Season, Person, MealGroup, MealSlot, DayKey } from '../types.ts';
+import { Household, Recipe, WeekMenu, Season, Person, MealGroup, MealSlot, DayKey, Dish, DepartmentCategory } from '../types.ts';
 
 export const DEPARTMENT_LABELS: Record<string, { label: string; icon: string; order: number }> = {
   ortofrutta: { label: 'Ortofrutta', icon: '🥕', order: 1 },
@@ -223,7 +223,39 @@ export function getWeekDayDetails(weekId: string): Record<string, { dateNum: num
   return result;
 }
 
+/** Reparto del supermercato dedotto dal nome del prodotto (regole semplici, senza AI). */
+export function categorizeProduct(productName: string): DepartmentCategory {
+  const p = (productName || '').toLowerCase();
+  if (/mela|pera|banana|zucca|pomodor|fungh|insalat|carot|limon|basilic|zucch|patat|cipoll|aglio|verdura|frutta|arancia|spinac/.test(p)) return 'ortofrutta';
+  if (/carne|pollo|manzo|vitello|salmone|pesce|vongol|tonno|macinato|maiale|tacchino|orate|gamber/.test(p)) return 'macelleria_pescheria';
+  if (/latte|formagg|mozzarella|burro|parmigiano|yogurt|uov|ricotta|stracchino|squacquerone|burrata/.test(p)) return 'latticini_freschi';
+  if (/gelato|surgelat|bastoncini/.test(p)) return 'surgelati';
+  if (/carta|detersivo|sapone|spugna|shampoo|scottex|sacchetti/.test(p)) return 'cura_casa_altro';
+  return 'dispensa_secco';
+}
+
+/** Chiave per riconoscere lo stesso piatto: nome senza spazi in eccesso e senza maiuscole. */
+export function dishKey(dish: Dish): string {
+  return (dish.name || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/** Toglie i piatti ripetuti (stesso nome) mantenendo il primo. */
+export function dedupeDishes(dishes: Dish[]): Dish[] {
+  const seen = new Set<string>();
+  return (dishes || []).filter((d) => {
+    const key = dishKey(d);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+/** Gruppi del pasto, con ogni piatto scritto una sola volta per gruppo. */
 export function normalizeMealSlot(slot: MealSlot | undefined, members: Person[]): MealGroup[] {
+  return normalizeMealSlotRaw(slot, members).map((g) => ({ ...g, dishes: dedupeDishes(g.dishes) }));
+}
+
+function normalizeMealSlotRaw(slot: MealSlot | undefined, members: Person[]): MealGroup[] {
   if (!slot) return [];
 
   // Default fallback if members list is empty
